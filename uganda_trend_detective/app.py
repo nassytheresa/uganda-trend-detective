@@ -284,27 +284,23 @@ with tab_map:
         m4.metric("Survive multiple-test correction", f"{int(df['fdr'].sum())} of {len(df)}")
 
         names = df["Location"].tolist()
-        picked = st.session_state.get("picked", "Kampala" if "Kampala" in names else names[0])
-        if picked not in names:
-            picked = names[0]
-        fig = make_map(df, var_key, unit_short, picked)
-        event = st.plotly_chart(fig, key="uganda_map", on_select="rerun", selection_mode="points", width="stretch")
-        pts = []
+        # A click on the map (stored by the previous run) updates the dropdown BEFORE it is drawn,
+        # so no forced page rerun is needed.
         try:
-            pts = event.selection.points
+            clicked = st.session_state["uganda_map"].selection.points[0].get("customdata")
+            clicked = clicked[0] if isinstance(clicked, (list, tuple)) else clicked
         except Exception:
-            pass
-        if pts:
-            cd = pts[0].get("customdata")
-            cd = cd[0] if isinstance(cd, (list, tuple)) else cd
-            if cd in names and cd != picked:
-                st.session_state["picked"] = cd
-                st.rerun()
+            clicked = None
+        if clicked in names and clicked != st.session_state.get("last_click"):
+            st.session_state["last_click"] = clicked
+            st.session_state["inspect"] = clicked
+        if st.session_state.get("inspect") not in names:
+            st.session_state["inspect"] = "Kampala" if "Kampala" in names else names[0]
 
-        choice = st.selectbox("Inspect location", names, index=names.index(picked))
-        if choice != picked:
-            st.session_state["picked"] = choice
-            st.rerun()
+        st.plotly_chart(make_map(df, var_key, unit_short, st.session_state["inspect"]), key="uganda_map",
+                        on_select="rerun", selection_mode="points", width="stretch")
+        st.selectbox("Inspect location", names, key="inspect")
+        choice = st.session_state["inspect"]
 
         s = series_for(all_monthly[choice], season, agg, start, end)
         try:
