@@ -193,7 +193,10 @@ def make_map(df, var_key, unit_short, selected):
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=640, paper_bgcolor="rgba(0,0,0,0)",
                       legend=dict(orientation="h", y=1.03, x=0.01, font=dict(color=INK),
                                   bgcolor="rgba(10,16,32,0.6)"))
-    fig.update_layout(map=layout) if new_api else fig.update_layout(mapbox=layout)
+    if new_api:
+        fig.update_layout(map=layout)
+    else:
+        fig.update_layout(mapbox=layout)
     return fig
 
 
